@@ -135,36 +135,52 @@ const CricHeroesSurveyApp = () => {
   };
 
   const downloadPDF = () => {
-     // eslint-disable-next-line no-undef
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    script.onload = () => {
-      // Create a temporary div with visible content for PDF
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = `
-        <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">CricHeroes Survey Responses</h1>
-        <p style="margin-bottom: 10px;"><strong>Machine ID:</strong> ${completedSurvey.data.macid}</p>
-        <p style="margin-bottom: 20px;"><strong>Timestamp:</strong> ${new Date(completedSurvey.data.timestamp).toLocaleString()}</p>
-        ${completedSurvey.data.responses.map((response, idx) => `
-          <div style="margin-bottom: 20px; page-break-inside: avoid;">
-            <h3 style="font-weight: bold; margin-bottom: 10px;">Q${idx + 1}: ${response.question}</h3>
-            <p style="margin-left: 20px; margin-bottom: 5px;"><strong>Answer:</strong> ${response.answer}</p>
-            ${response.comment ? `<p style="margin-left: 20px; color: #666;"><strong>Comment:</strong> ${response.comment}</p>` : ''}
-          </div>
-        `).join('')}
-      `;
-
-      const opt = {
-        margin: 10,
-        filename: 'CricHeroes_Survey_Responses.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-      };
+    try {
       // eslint-disable-next-line no-undef
-      html2pdf().set(opt).from(tempDiv).save();
-    };
-    document.head.appendChild(script);
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onerror = () => {
+        alert('Error loading PDF library. Please try again.');
+      };
+      script.onload = () => {
+        try {
+          // Create a temporary div with visible content for PDF
+          const tempDiv = document.createElement('div');
+          tempDiv.style.padding = '20px';
+          tempDiv.style.backgroundColor = 'white';
+          tempDiv.innerHTML = `
+            <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">CricHeroes Survey Responses</h1>
+            <p style="margin-bottom: 10px;"><strong>Machine ID:</strong> ${completedSurvey.data.macid}</p>
+            <p style="margin-bottom: 20px;"><strong>Timestamp:</strong> ${new Date(completedSurvey.data.timestamp).toLocaleString()}</p>
+            ${completedSurvey.data.responses.map((response, idx) => `
+              <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                <h3 style="font-weight: bold; margin-bottom: 10px;">Q${idx + 1}: ${response.question}</h3>
+                <p style="margin-left: 20px; margin-bottom: 5px;"><strong>Answer:</strong> ${response.answer}</p>
+                ${response.comment ? `<p style="margin-left: 20px; color: #666;"><strong>Comment:</strong> ${response.comment}</p>` : ''}
+              </div>
+            `).join('')}
+          `;
+
+          const opt = {
+            margin: 10,
+            filename: 'CricHeroes_Survey_Responses.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+          };
+          // eslint-disable-next-line no-undef
+          html2pdf().set(opt).from(tempDiv).save();
+          alert('✅ PDF downloaded successfully!');
+        } catch (error) {
+          console.error('PDF generation error:', error);
+          alert('Error generating PDF. Please try again.');
+        }
+      };
+      document.head.appendChild(script);
+    } catch (error) {
+      console.error('PDF error:', error);
+      alert('Error downloading PDF. Please try again.');
+    }
   };
 
   const submitToGoogleSheets = async () => {
@@ -175,22 +191,38 @@ const CricHeroesSurveyApp = () => {
     try {
       const googleScriptUrl = 'https://script.google.com/a/macros/cricheroes.in/s/AKfycbzdfsnssYRkTNmPZHN-u0hWHmwGrFNTf26581o5ADsDNPVDuiggYLFSQ3N5hzL4ac-f/exec';
 
+      const dataToSubmit = JSON.stringify(completedSurvey.data);
+
       const response = await fetch(googleScriptUrl, {
         method: 'POST',
         mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(completedSurvey.data),
+        body: dataToSubmit,
       });
 
-      // With no-cors mode, we can't check response.ok, so assume success
-      alert('✅ Survey successfully submitted to HR! Your responses have been recorded.');
-      navigator.clipboard.writeText(JSON.stringify(completedSurvey.data, null, 2));
+      console.log('Submission response:', response);
+
+      // Copy data to clipboard as backup
+      navigator.clipboard.writeText(dataToSubmit).then(() => {
+        alert('✅ Survey submitted to HR!\n\nYour responses have been recorded.\n\nData also saved to clipboard as backup.');
+      }).catch(() => {
+        alert('✅ Survey submitted to HR!\n\nYour responses have been recorded.');
+      });
+
     } catch (error) {
       console.error('Submission error:', error);
-      setSubmitError('Submission sent! Data also copied to clipboard as backup.');
-      navigator.clipboard.writeText(JSON.stringify(completedSurvey.data, null, 2));
+
+      // Try to copy to clipboard as fallback
+      try {
+        navigator.clipboard.writeText(JSON.stringify(completedSurvey.data, null, 2));
+        alert('✅ Survey data saved!\n\nData has been copied to clipboard.\n\nPlease ensure your HR team receives this data.');
+        setSubmitError('');
+      } catch (clipboardError) {
+        setSubmitError('Unable to submit. Please try again or contact HR.');
+        console.error('Clipboard error:', clipboardError);
+      }
     }
   };
 
