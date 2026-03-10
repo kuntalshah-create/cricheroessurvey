@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Download, Send, PlayCircle, Eye, Edit2 } from 'lucide-react';
 
+// App Version
+const APP_VERSION = '3.0.0';
+
 const CricHeroesSurveyApp = () => {
   const [currentPage, setCurrentPage] = useState('landing'); // landing, survey, completed
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -290,6 +293,7 @@ const CricHeroesSurveyApp = () => {
           <div className="mt-12 text-center text-gray-600 text-sm">
             <p>Your responses help us build a better workplace.</p>
             <p>All data is encrypted and kept confidential.</p>
+            <p className="mt-4 text-gray-500 text-xs">Version {APP_VERSION}</p>
           </div>
         </div>
       </div>
