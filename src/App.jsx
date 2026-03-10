@@ -126,6 +126,7 @@ const CricHeroesSurveyApp = () => {
   };
 
   const downloadPDF = () => {
+     // eslint-disable-next-line no-undef
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
     script.onload = () => {
@@ -137,6 +138,7 @@ const CricHeroesSurveyApp = () => {
         html2canvas: { scale: 2 },
         jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
       };
+      // eslint-disable-next-line no-undef
       html2pdf().set(opt).from(element).save();
     };
     document.head.appendChild(script);
